@@ -1,31 +1,63 @@
+# Importing steganography library for encoding and decoding messages
 from steganography.steganography import Steganography
 
-# Import the default spy objects
+# Importing the default spy objects
 from spy_details import spy, friends
 
-# Import the classes - Note the casing is different
+# Import the classes
 from spy_details import Spy, ChatMessage
 
-# Import this at the top of your file
+# Importing csv files
 import csv
+
+# Importing termcolor library for providing colors to different type of text
+from termcolor import colored
 
 # Welcome message to the user
 print 'Hello Let\'s get started '
 
-# default status messages
+# list for old status messages
 status_message = ['coding', 'eating', 'sleeping', 'repeating']
+chats = []
 
 
+# defining a function for loading existing friends when application starts
 def load_friends():
     with open('friends.csv', 'rb') as friends_data:
-        reader = csv.reader(friends_data)
+        reader = list(csv.reader(friends_data))
 
-        for row in reader:
-            new_spy = Spy(name=row[0], salutation=row[1], rating=float(row[2]), age=int(row[3]))
-            friends.append(new_spy)
+        for row in reader[1:]:
+            if row:
+                name = row[0]
+                salutation = row[1]
+                rating = row[2]
+                age = row[3]
+                new_spy = Spy(name, salutation, rating, age)
+                friends.append(new_spy)
 
 
+# defining a function for loading chats history between user and a friend when application starts
+def load_chats():
+    with open('chats.csv', 'rb') as chats_data:
+        reader = list(csv.reader(chats_data))
+
+        for row in reader[1:]:
+            if row:
+                name_of_sender = row[0]
+                message_sent_to = row[1]
+                text = row[2]
+                sent_by_me = row[4]
+                new_chat = ChatMessage(name_of_sender, message_sent_to, text, sent_by_me)
+                chats.append(new_chat)
+
+
+load_friends()
+load_chats()
+
+
+# defining a function for adding status
 def add_status(c_s_m):
+    # checking if any old status exists or not
     if c_s_m is not None:
         print "Your current status message is " + c_s_m + "\n"
     else:
@@ -33,6 +65,7 @@ def add_status(c_s_m):
 
     status_choice = raw_input("Do you want to add from old status (Y/N)?")
 
+    # If user selects to add from old status
     if status_choice.upper() == 'Y':
         serial_no = 1
         for old_status in status_message:
@@ -40,6 +73,8 @@ def add_status(c_s_m):
             serial_no = serial_no + 1
         user_status_selection = input("Which one do you want to choose ")
         new_status = status_message[user_status_selection - 1]
+
+    # if user wants to add a new status
     elif status_choice.upper() == 'N':
         new_status = raw_input("write your status")
         status_message.append(new_status)
@@ -48,14 +83,18 @@ def add_status(c_s_m):
     return new_status
 
 
+# defining a function to add a new friend
 def add_friend():
     new_friend = Spy('', '', 0.0, 0)
     new_friend.name = raw_input("what's your friend name?")
     new_friend.salutation = raw_input("Mr. or Ms.")
     new_friend.age = input("what's your friend age")
     new_friend.rating = input("what's your friend rating")
+    # checking eligibility of the new friend
     if len(new_friend.name) > 0 and 50 >= new_friend.age >= 12 and new_friend.rating >= 4.5:
+        # saving new friend details
         friends.append(new_friend)
+        # writing the details of new friend in csv file
         with open('friends.csv', 'a') as friends_data:
             writer = csv.writer(friends_data)
             writer.writerow([new_friend.name, new_friend.salutation, new_friend.rating, new_friend.age, new_friend.is_online])
@@ -64,6 +103,7 @@ def add_friend():
     return len(friends)
 
 
+# defining a function to select a friend from existing frie/nd//s
 def select_friend():
     item_number = 0
     for friend in friends:
@@ -74,28 +114,55 @@ def select_friend():
     return user_index
 
 
+# defining a function to send a secret message by encoding
 def send_message():
     selected_friend = select_friend()
     message = raw_input("Write the secret message")
-    original_image = raw_input("Write the name of your image")
+
+    original_image = raw_input("Write the name of image with which you want to encode secret message(with extension)")
     output_path = "output.png"
     Steganography.encode(original_image, output_path, message)
-    sent_by_me = True
-    new_chat = ChatMessage(message, sent_by_me)
+    message_sent_to = friends[selected_friend].name
+    new_chat = ChatMessage(spy.name, message_sent_to, message, True)
     friends[selected_friend].chats.append(new_chat)
     with open('chats.csv', 'a') as chats_data:
         writer = csv.writer(chats_data)
-        writer.writerow([new_chat.message, new_chat.time, new_chat.sent_by_me])
+        writer.writerow([spy.name, message_sent_to, new_chat.message, new_chat.time, new_chat.sent_by_me])
 
 
+# defining a function to read a secret message from a friend
 def read_message():
     chosen_friend = select_friend()
     print "Reading message from " + friends[chosen_friend].name
-    output_path = raw_input("Name of the image to be decoded")
+    output_path = raw_input("Name of the image you want to decoded the message from(with extension)")
     secret_message = Steganography.decode(output_path)
     print "secret message is " + secret_message
-    new_chat = ChatMessage(secret_message, False)
+    new_chat = ChatMessage(spy.name, friends[chosen_friend].name, secret_message, False)
     friends[chosen_friend].chats.append(new_chat)
+
+
+def read_chat_history():
+    friend_choice = select_friend()
+
+    print '\n'
+
+    for chat in chats:
+        if chat.sent_by_me and chat.message_sent_to == friends[friend_choice].name:
+            # Date and time is printed in blue
+            print (colored(str(chat.time.strftime("%d %B %Y %A %H : %M")) + ",", "blue")),
+            # The message is printed in red
+            print (colored("You : ", "red")),
+            # Default black colour for text
+            print str(chat.message)
+
+        # Message sent by another spy
+        elif chat.sent_by_me is False:
+            # Date and time is printed in blue
+            print (colored(str(chat.time.strftime("%d %B %Y %A %H : %M")) + ",", "blue")),
+            # The message is printed in red
+            print (colored(str(friends[friend_choice].name) + " : ", "red")),
+            # Default black colour for text
+            print str(chat.message)
 
 
 def start_chat():
@@ -107,7 +174,8 @@ def start_chat():
                             "\n 1. Add a status  "
                             "\n 2. Add a friend "
                             "\n 3. Send a secret message " 
-                            "\n 4. read a secret message"
+                            "\n 4. read a secret message "
+                            "\n 5. View chat history"
                             "\n 0. Close application")
         if menu_choice == 1:
             updated_status_message = add_status(current_status_message)
@@ -120,6 +188,8 @@ def start_chat():
             send_message()
         elif menu_choice == 4:
             read_message()
+        elif menu_choice == 5:
+            read_chat_history()
         elif menu_choice == 0:
             show_menu = False
         else:

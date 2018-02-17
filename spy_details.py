@@ -13,18 +13,20 @@ class Spy:
         self.current_status_message = None
 
 
-spy = Spy('bond', 'Mr.', 24, 4.7)
+spy = Spy('Bond', 'Mr.', 24, 4.7)
 
-friend_one = Spy('agent rouge', 'Mr.', 27, 4.9)
-friend_two = Spy('pink panther', 'Ms.', 21, 4.79)
-friend_three = Spy('dexter', 'Dr.', 37, 4.95)
+friend_one = Spy('Drake', 'Dr.', 37, 4.95)
 
-friends = [friend_one, friend_two, friend_three]
+
+friends = [friend_one]
 
 
 class ChatMessage:
 
-    def __init__(self, message, sent_by_me):
+    def __init__(self, sender, message_sent_to, message, sent_by_me):
+        self.name_of_sender = sender
+        self.message_sent_to = message_sent_to
         self.message = message
         self.time = datetime.now()
         self.sent_by_me = sent_by_me
+
