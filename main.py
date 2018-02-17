@@ -18,6 +18,8 @@ print 'Hello Let\'s get started '
 
 # list for old status messages
 status_message = ['coding', 'eating', 'sleeping', 'repeating']
+
+direct = ['emergency', 'accident', 'sos', 'help', 'save', 'save me']
 chats = []
 
 
@@ -136,9 +138,37 @@ def read_message():
     print "Reading message from " + friends[chosen_friend].name
     output_path = raw_input("Name of the image you want to decoded the message from(with extension)")
     secret_message = Steganography.decode(output_path)
-    print "secret message is " + secret_message
-    new_chat = ChatMessage(spy.name, friends[chosen_friend].name, secret_message, False)
-    friends[chosen_friend].chats.append(new_chat)
+    try:
+        # Using decode() function with file name of encrypted message as parameter
+        secret_message = Steganography.decode(output_path)
+        print (colored("Your secret message is:","cyan"))
+        print (colored(secret_message,"blue"))
+
+        # Converting secret_text to uppercase and splitting
+        new_text = (secret_message.upper()).split()
+
+        # Checking emergency templates for help
+        if 'SOS' in new_text or 'SAVE ME'in new_text or 'HELP ME' in new_text or 'ALERT' in new_text or 'RESCUE' in new_text or 'ACCIDENT' in new_text:
+
+            # Emergency alert
+            print colored("!!!", 'grey', 'on_yellow'),
+            print colored("The friend who sent this message needs your help!", "green")
+
+            # Creating new chat
+            new_chat = ChatMessage(spy.name, friends[chosen_friend].name, secret_message, False)
+            # Appending to chats
+            friends[chosen_friend].chats.append(new_chat)
+
+        # If there are no emergency messages
+        else:
+            new_chat = ChatMessage(spy.name, friends[chosen_friend].name, secret_message, False)
+            # Appending
+            friends[chosen_friend].chats.append(new_chat)
+
+            print colored("Your secret message has been saved.\n", 'cyan')
+    # No message found exception
+    except len(secret_message) == 0:
+        print colored("Nothing to decode from the image...\n Sorry! There is no secret message", 'red')
 
 
 def read_chat_history():
